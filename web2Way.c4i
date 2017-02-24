@@ -2,11 +2,11 @@
     <copyright>Copyright 2016 itsfrosty.  All rights reserved.</copyright>
     <creator>Controller</creator>
     <manufacturer>itsfrosty</manufacturer>
-    <name>Web 2-Way</name>
-    <model>Web 2-Way</model>
+    <name>HTTP Interface</name>
+    <model>HTTP Interface</model>
     <created>12/10/2016 7:01 AM</created>
     <modified>12/10/2016 10:20 AM</modified>
-    <version>49</version>
+    <version>0.1</version>
     <small>devices_sm\C4.gif</small>
     <large>devices_lg\C4.gif</large>
     <control>lua_gen</control>
@@ -159,29 +159,55 @@ function getVariable(proxyID, variableID)
 end
 
 function processRequest(params)
-  if (params.proxyID == nil) then
-    msg = '{"success":"false"}';
-  elseif (params.command == 'set') then
+  if (params.command == 'set') then
     setVariable(params.proxyID, params.variableID, params.newValue)
-    msg = '{"success":"true"}';
-  elseif (params.command == 'get') then
-    msg = '{';
+    return '{"success":"true"}'
+  end
+
+  if (params.command == 'get') then
+    local msg = '{'
     for variableID in string.gmatch(params.variableID, "%d+") do
        msg = msg .. '"' .. variableID .. '":"' .. getVariable(params.proxyID, variableID) .. '",'
     end
-    msg = msg .. '"success":"true"}'
-  elseif (params.command == 'getvariables') then
-    msg = '{';
+    return msg .. '"success":"true"}'
+  end
+
+  if (params.command == 'getvariables') then
+    local msg = '{'
     for key,value in pairs(C4:GetDeviceVariables(params.proxyID)) do 
 	  msg = msg .. '"' .. key .. '":"' .. value.name .. '",'
 	end
-	msg = msg .. '"success":"true"}'
-  else
-    msg = '{"success":"false"}';
+	return msg .. '"success":"true"}'
   end
-  return msg
-end
 
+  if (params.command == 'getdevices') then
+      local msg = '{'
+      for k,v in pairs(PersistData["bindings"]) do
+          msg = msg .. '"' .. k .. '":"' .. v .. '",'
+      end
+      return msg .. '"success":"true"}'
+  end
+
+  return '{"success":"false"}'
+end
+--[[
+function OnBindingChanged(idBinding, strClass, bIsBound)
+
+    local tableName = "bindings"
+
+    if (nil == PersistData["bindings"]) then
+        PersistData = {}
+        PersistData[tableName] = {}
+        debugPrint("PersistData created")
+    end
+
+    if (bIsBound) then
+        PersistData[tableName][idBinding] = strClass
+    else
+        table.remove(PersistData[tableName], idBinding)
+    end
+end
+--]]
 function OnServerDataIn(nHandle, strData)
   local msg = '';
 
@@ -193,7 +219,8 @@ function OnServerDataIn(nHandle, strData)
   C4:ServerCloseClient(nHandle)
 end
 
-gInitTimer = C4:AddTimer(5, "SECONDS")]]></script>
+gInitTimer = C4:AddTimer(5, "SECONDS")
+]]></script>
 		<actions>
             <action>
                 <name>Default Action</name>
@@ -213,4 +240,40 @@ gInitTimer = C4:AddTimer(5, "SECONDS")]]></script>
             </property>
         </properties>
     </config>
+    <connections>
+        <connection>
+            <id>1</id>
+            <type>1</type>
+            <facing>6</facing>
+            <connectionname>Device link</connectionname>
+            <consumer>True</consumer>
+            <linelevel>False</linelevel>
+            <audiosource>False</audiosource>
+            <videosource>False</videosource>
+            <idautobind>43123</idautobind>
+            <classes>
+                <class>
+                    <autobind>False</autobind>
+                    <classname>BUTTON_LINK</classname>
+                </class>
+            </classes>
+        </connection>
+        <connection>
+            <id>2</id>
+            <type>1</type>
+            <facing>6</facing>
+            <connectionname>Device link</connectionname>
+            <consumer>True</consumer>
+            <linelevel>False</linelevel>
+            <audiosource>False</audiosource>
+            <videosource>False</videosource>
+            <idautobind>43123</idautobind>
+            <classes>
+                <class>
+                    <autobind>False</autobind>
+                    <classname>BUTTON_LINK</classname>
+                </class>
+            </classes>
+        </connection>
+    </connections>
 </devicedata>
